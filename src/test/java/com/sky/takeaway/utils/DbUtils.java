@@ -99,13 +99,14 @@ public class DbUtils extends TestConfig {
      * @param userId 用户ID
      */
     public static void clearCartByUserId(Long userId) {
-        String sql = "delete from shopping_cart where user_id = ?";
+        String sql = "DELETE FROM shopping_cart WHERE user_id = ?";
         try (Connection conn = DriverManager.getConnection(JDBC_URL, USERNAME, PASSWORD);
              PreparedStatement stmt = conn.prepareStatement(sql)) {
             stmt.setObject(1, userId);
-            log.info("清空购物车成功, userId={}", userId);
+            int rows = stmt.executeUpdate();
+            log.info("清空购物车成功, userId={}, 影响行数={}", userId, rows);
         } catch (SQLException e) {
-            log.error("清空购物车失败, userId={}", userId, e);
+            log.error("清空购物车失败, userId={}, SQL={}", userId, sql, e);
             throw new RuntimeException("清空购物车失败：" + e.getMessage(), e);
         }
     }

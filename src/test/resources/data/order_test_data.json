@@ -1,0 +1,74 @@
+[
+  {
+    "addressBookId": 3,
+    "amount": 99.99,
+    "deliveryStatus": 1,
+    "estimatedDeliveryTime": "2026-08-17 18:00:00",
+    "packAmount": 2,
+    "payMethod": 1,
+    "remark": "不要香菜",
+    "tablewareNumber": 3,
+    "tablewareStatus": 0,
+    "expectedCode": 1
+  },
+  {
+    "addressBookId": 3,
+    "amount": 0.0,
+    "deliveryStatus": 1,
+    "estimatedDeliveryTime": "2026-08-17 18:00:00",
+    "packAmount": 2,
+    "payMethod": 1,
+    "remark": "不要香菜",
+    "tablewareNumber": 3,
+    "tablewareStatus": 0,
+    "expectedCode": 0
+  },
+  {
+    "addressBookId": 3,
+    "amount": 99.99,
+    "deliveryStatus": 1,
+    "estimatedDeliveryTime": "2026-08-17 18:00:00",
+    "packAmount": 2,
+    "payMethod": 1,
+    "remark": "",
+    "tablewareNumber": 3,
+    "tablewareStatus": 0,
+    "expectedCode": 1
+  },
+  {
+    "addressBookId": 99,
+    "amount": 99.99,
+    "deliveryStatus": 1,
+    "estimatedDeliveryTime": "2026-08-17 18:00:00",
+    "packAmount": 2,
+    "payMethod": 1,
+    "remark": "不要香菜",
+    "tablewareNumber": 3,
+    "tablewareStatus": 0,
+    "expectedCode": 0
+  },
+  {
+    "addressBookId": 3,
+    "amount": 99.99,
+    "deliveryStatus": 1,
+    "estimatedDeliveryTime": "2026-08-17 18:00:00",
+    "packAmount": 2,
+    "payMethod": 1,
+    "remark": "不要香菜",
+    "tablewareNumber": -1,
+    "tablewareStatus": 0,
+    "expectedCode": 0
+  },
+  {
+    "addressBookId": 3,
+    "amount": 99.99,
+    "deliveryStatus": 99,
+    "estimatedDeliveryTime": "2026-08-17 18:00:00",
+    "packAmount": 2,
+    "payMethod": 1,
+    "remark": "不要香菜",
+    "tablewareNumber": 3,
+    "tablewareStatus": 0,
+    "expectedCode": 0
+  }
+]
