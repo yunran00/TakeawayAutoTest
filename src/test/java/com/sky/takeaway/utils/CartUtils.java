@@ -14,7 +14,7 @@ import static org.hamcrest.Matchers.*;
  */
 public class CartUtils extends TestConfig {
 
-    public static void addCartDish(String token){
+    public static void addDefaultDish(String token){
 
         Map<String,Object> params = new HashMap<>();
         params.put("dishId",51);

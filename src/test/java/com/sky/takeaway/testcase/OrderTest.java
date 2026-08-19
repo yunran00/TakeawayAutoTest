@@ -1,100 +1,67 @@
 package com.sky.takeaway.testcase;
 
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.sky.takeaway.config.TestConfig;
+import com.sky.takeaway.base.UserBaseTest;
 import com.sky.takeaway.model.OrderTestData;
 import com.sky.takeaway.utils.CartUtils;
 import com.sky.takeaway.utils.DbUtils;
-import com.sky.takeaway.utils.TokenUtils;
+import io.qameta.allure.Step;
 import lombok.extern.slf4j.Slf4j;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
+import org.junit.jupiter.api.Nested;
+import org.junit.jupiter.api.Tag;
 import org.junit.jupiter.params.ParameterizedTest;
-import org.junit.jupiter.params.provider.Arguments;
 import org.junit.jupiter.params.provider.MethodSource;
 
-import java.io.File;
 import java.util.HashMap;
 import java.util.Map;
-import java.util.stream.Stream;
 
 import static io.restassured.RestAssured.given;
 import static org.hamcrest.Matchers.*;
 import static org.junit.jupiter.api.Assertions.*;
 
 @Slf4j
-public class OrderTest extends TestConfig {
+public class OrderTest extends UserBaseTest {
 
-    private String token;
-    private Long userId = 4L;
     private final String submitPath = props.getProperty("order.path");
-    private static final ObjectMapper objectMapper = new ObjectMapper();
 
     @BeforeEach
-    public void setUp() {
-        token = TokenUtils.getUserToken();
-        log.info("获取到用户 token，用户ID: {}", userId);
-
-        // 清空购物车，保证测试环境干净
+    public void prepareCart() {
         DbUtils.clearCartByUserId(userId);
-        // 添加购物车
-        CartUtils.addCartDish(token);
+        CartUtils.addDefaultDish(token);
         log.info("购物车已准备");
     }
 
-    /**
-     * 从 JSON 文件读取测试数据
-     */
-    static Stream<Arguments> orderDataProvider() throws Exception {
-        File jsonFile = new File("src/test/resources/data/order_test_data.json");
-        OrderTestData[] dataArray = objectMapper.readValue(jsonFile, OrderTestData[].class);
-
-        return Stream.of(dataArray)
-                .map(data -> Arguments.of(
-                        data.getAddressBookId(),
-                        data.getAmount(),
-                        data.getDeliveryStatus(),
-                        data.getEstimatedDeliveryTime(),
-                        data.getPackAmount(),
-                        data.getPayMethod(),
-                        data.getRemark(),
-                        data.getTablewareNumber(),
-                        data.getTablewareStatus(),
-                        data.getExpectedCode()
-                ));
+    @Nested
+    @DisplayName("下单正向场景")
+    @Tag("smoke")
+    class PositiveTests {
+        @ParameterizedTest
+        @DisplayName("正常下单成功")
+        @MethodSource("com.sky.takeaway.testcase.OrderTestDataProvider#positiveDataProvider")
+        void testOrderSuccess(OrderTestData data) {
+            Integer orderId = submitOrder(data);
+            verifyOrderInDatabase(orderId,data.getAmount());
+        }
     }
 
-    @ParameterizedTest
-    @DisplayName("下单接口参数化测试")
-    @MethodSource("orderDataProvider")
-    public void testOrderSubmit(
-            Integer addressBookId,
-            Double amount,
-            Integer deliveryStatus,
-            String estimatedDeliveryTime,
-            Integer packAmount,
-            Integer payMethod,
-            String remark,
-            Integer tablewareNumber,
-            Integer tablewareStatus,
-            Integer expectedCode) {
+    @Nested
+    @DisplayName("下单异常场景")
+    @Tag("regression")
+    class NegativeTests {
+        @ParameterizedTest
+        @DisplayName("异常下单 - 参数校验")
+        @MethodSource("com.sky.takeaway.testcase.OrderTestDataProvider#negativeDataProvider")
+        void testOrderFailure(OrderTestData data) {
+            submitOrderAndExpectFailure(data);
+        }
+    }
 
-        log.info("执行下单测试用例 - 期望业务码: {}", expectedCode);
+    @Step("提交订单")
+    private Integer submitOrder(OrderTestData data) {
+        Map<String, Object> params = buildParams(data);
 
-        // 1. 构造请求参数
-        Map<String, Object> params = new HashMap<>();
-        params.put("addressBookId", addressBookId);
-        params.put("amount", amount);
-        params.put("deliveryStatus", deliveryStatus);
-        params.put("estimatedDeliveryTime", estimatedDeliveryTime);
-        params.put("packAmount", packAmount);
-        params.put("payMethod", payMethod);
-        params.put("remark", remark);
-        params.put("tablewareNumber", tablewareNumber);
-        params.put("tablewareStatus", tablewareStatus);
-
-        // 2. 调用下单接口
-        Integer orderId = given()
+        return given()
                 .log().all()
                 .contentType("application/json")
                 .header("authentication", token)
@@ -104,32 +71,52 @@ public class OrderTest extends TestConfig {
                 .then()
                 .log().all()
                 .statusCode(200)
-                .body("code", equalTo(expectedCode))
-                .body("data.orderAmount", expectedCode == 1 ? notNullValue() : nullValue())
+                .body("code", equalTo(data.getExpectedCode()))
+                .body("data.orderAmount", data.getExpectedCode() == 1 ? notNullValue() : nullValue())
                 .extract()
                 .path("data.id");
+    }
 
-        log.info("下单完成 - 订单ID: {}, 业务码: {}", orderId, expectedCode);
+    @Step("验证订单数据落库")
+    private void verifyOrderInDatabase(Integer orderId, Double amount) {
+        Double dbAmount = DbUtils.getOrderAmount(orderId.longValue());
+        assertNotNull(dbAmount, "数据库订单金额不应为空");
+        assertEquals(amount, dbAmount, 0.01, "金额不一致");
 
-        // 3. 只有期望成功时才执行数据库校验
-        if (expectedCode == 1 && orderId != null) {
-            // 校验订单金额
-            Double dbAmount = DbUtils.getOrderAmount(orderId.longValue());
-            assertNotNull(dbAmount, "数据库中订单金额不应为空");
-            assertEquals(amount.floatValue(), dbAmount, 0.01, "数据库订单金额与预期不一致");
+        Integer dbStatus = DbUtils.getOrderStatus(orderId.longValue());
+        assertNotNull(dbStatus, "状态不应为空");
+        assertEquals(1, dbStatus, "状态异常");
 
-            // 校验订单状态
-            Integer dbStatus = DbUtils.getOrderStatus(orderId.longValue());
-            assertNotNull(dbStatus, "数据库中订单状态不应为空");
-            assertEquals(1, dbStatus, "订单状态异常");
+        log.info("数据库校验通过: 金额={}, 状态={}", dbAmount, dbStatus);
+    }
 
-            // 校验订单是否存在
-            boolean exists = DbUtils.orderExists(orderId.longValue());
-            assertTrue(exists, "订单不存在");
+    private void submitOrderAndExpectFailure(OrderTestData data) {
+        Map<String, Object> params = buildParams(data);
 
-            log.info("数据库校验通过 - 金额: {}, 状态: {}", dbAmount, dbStatus);
-        } else {
-            log.info("异常场景校验完成，不执行数据库校验");
-        }
+        given()
+                .log().all()
+                .contentType("application/json")
+                .header("authentication", token)
+                .body(params)
+                .when()
+                .post(submitPath)
+                .then()
+                .log().all()
+                .statusCode(200)
+                .body("code", equalTo(data.getExpectedCode()));
+    }
+
+    private Map<String, Object> buildParams(OrderTestData data) {
+        Map<String, Object> params = new HashMap<>();
+        params.put("addressBookId", data.getAddressBookId());
+        params.put("amount", data.getAmount());
+        params.put("deliveryStatus", data.getDeliveryStatus());
+        params.put("estimatedDeliveryTime", data.getEstimatedDeliveryTime());
+        params.put("packAmount", data.getPackAmount());
+        params.put("payMethod", data.getPayMethod());
+        params.put("remark", data.getRemark());
+        params.put("tablewareNumber", data.getTablewareNumber());
+        params.put("tablewareStatus", data.getTablewareStatus());
+        return params;
     }
 }
