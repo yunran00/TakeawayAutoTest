@@ -23,7 +23,7 @@ public class LoginTest extends TestConfig {
      * 正常场景
      */
     @Nested
-    @DisplayName("正向场景")
+    @DisplayName("用户登录正常场景")
     @Tag("smoke")
     class PositiveTests {
         @ParameterizedTest
@@ -53,9 +53,8 @@ public class LoginTest extends TestConfig {
      * _null_：字段存在但为空（传空字符串）
      * _missing_：字段完全缺失（不 put 该字段）
      */
-
     @Nested
-    @DisplayName("异常场景")
+    @DisplayName("用户登录异常场景")
     @Tag("regression")
     class NegativeTests {
         @ParameterizedTest

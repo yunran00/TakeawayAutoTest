@@ -14,12 +14,38 @@ import static org.hamcrest.Matchers.*;
  */
 public class CartUtils extends TestConfig {
 
+    /**
+     * 默认测试使用购物车（菜品为54号，没有口味）
+     */
     public static void addDefaultDish(String token){
+        addDish(token,54L,null);
+    }
 
+    /**
+     * 通用添加方法（添加套餐，套餐没有口味）
+     */
+    public static void addSetmeal(String token, Long setmealId){
         Map<String,Object> params = new HashMap<>();
-        params.put("dishId",51);
-        params.put("setmealId",45);
+        params.put("setmealId",setmealId);
+        doAdd(token,params);
+    }
 
+    /**
+     * 通用添加方法（添加菜品 + 口味）
+     */
+    public static void addDish(String token, Long dishId, String dishFlavor){
+        Map<String,Object> params = new HashMap<>();
+        params.put("dishId",dishId);
+        if (dishFlavor != null && !dishFlavor.isEmpty()){
+            params.put("dishFlavor",dishFlavor);
+        }
+        doAdd(token,params);
+    }
+
+    /**
+     * 调用接口，加入购物车
+     */
+    public static void doAdd(String token,Map<String,Object> params){
         given()
                 .log().all()
                 .contentType("application/json")
