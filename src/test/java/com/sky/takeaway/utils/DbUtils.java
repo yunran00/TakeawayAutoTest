@@ -62,7 +62,7 @@ public class DbUtils extends TestConfig {
     public static Double getOrderAmount(Long orderId) {
         Object result = queryOne("select amount from orders where id = ?", "amount", orderId);
         if (result == null) {
-            return null;
+            return 0.0;
         }
         return ((Number) result).doubleValue();
     }
