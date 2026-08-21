@@ -91,7 +91,32 @@ public class DbUtils extends TestConfig {
      */
     public static double getCartTotalByUserId(Long userId) {
         Object result = queryOne("select sum(amount) from shopping_cart where user_id = ?", "sum(amount)", userId);
-        return result == null ? 0 : ((Number) result).doubleValue();
+        return result == null ? 0.0 : ((Number) result).doubleValue();
+    }
+
+    /**
+     * 根据用户id查询购物车中菜品的口味
+     */
+    public static String getFlavorByUserId(Long userId) {
+        Object result = queryOne(
+                "select dish_flavor from shopping_cart where user_id = ?", "dish_flavor", userId);
+        return result == null ? null : result.toString();
+    }
+
+    /**
+     * 根据菜品的id查询菜品金额
+     */
+    public static Double getPriceByDishId(Long orderId) {
+        Object result = queryOne("select price from dish where id = ?", "price", orderId);
+        return result == null ? null : ((Number) result).doubleValue();
+    }
+
+    /**
+     * 根据套餐的id查询套餐金额
+     */
+    public static Double getPriceBySetmealId(Long setmealId) {
+        Object result = queryOne("select price from setmeal where id = ?", "price", setmealId);
+        return result == null ? null : ((Number) result).doubleValue();
     }
 
     /**
